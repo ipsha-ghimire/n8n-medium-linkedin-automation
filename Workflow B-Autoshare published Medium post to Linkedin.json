@@ -1,0 +1,188 @@
+{
+  "name": "Workflow B-Autoshare published Medium post to Linkedin",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "feedUrl": "https://medium.com/feed/@ipshaaghimire"
+      },
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        32
+      ],
+      "id": "fc0704d9-5ff9-43e3-9044-a2f03d726d66",
+      "name": "Medium RSS Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1KA1krKKYyEAj_Rs0KjFV47LXSeRDcMlJTrnWdJ9hZlw",
+          "mode": "list",
+          "cachedResultName": "save linkedin captions-n8n automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KA1krKKYyEAj_Rs0KjFV47LXSeRDcMlJTrnWdJ9hZlw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -80,
+        160
+      ],
+      "id": "df3d4217-1825-4e09-9a69-5235ee6c320f",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5kKROCRn4fuHhVOZ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        400,
+        48
+      ],
+      "id": "5e4e66ef-1a65-40e1-9455-6af1fb054476",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Get inputs from both sources (RSS + Google Sheet) ---\nconst inputs = $input.all();\nlet mediumPost = null;\nlet sheetData = null;\n\nfor (const item of inputs) {\n  const data = item.json;\n  if (data.link && data.title) mediumPost = data;\n  if (data.caption || data.hashtags || data.linkedin_caption) sheetData = data;\n}\n\nif (!mediumPost || !sheetData) {\n  return [{\n    json: {\n      success: false,\n      message: \"Missing Medium or Sheet data.\"\n    }\n  }];\n}\n\nconst title = sheetData.title || mediumPost.title || \"Untitled Post\";\nconst medium_link = mediumPost.link;\nconst caption = sheetData.caption || sheetData.linkedin_caption || \"\";\nconst hashtags = Array.isArray(sheetData.hashtags)\n  ? sheetData.hashtags\n  : (typeof sheetData.hashtags === \"string\"\n      ? JSON.parse(sheetData.hashtags || \"[]\")\n      : []);\n\nlet linkedin_text = `${caption.trim()}\\n\\nRead the full article here: ${medium_link}`;\nif (hashtags.length > 0) {\n  const formattedTags = hashtags\n    .map(tag => tag.startsWith(\"#\") ? tag : `#${tag}`)\n    .join(\" \");\n  linkedin_text += `\\n\\n${formattedTags}`;\n}\n\nreturn [{\n  json: {\n    title,\n    medium_link,\n    caption,\n    hashtags,\n    linkedin_text,\n    posted_at: new Date().toISOString(),\n    success: true\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        48
+      ],
+      "id": "928d2644-750b-4430-9ed1-eab131e36db3",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all rows from the input\nconst rows = $input.all();\n\n// Check if the sheet is empty\nif (!rows || rows.length === 0) {\n  // Return an empty object so the workflow doesn't crash\n  return [{\n    json: {\n      message: \"No rows found in the Google Sheet\",\n      success: false\n    }\n  }];\n}\n\n// Extract the last (most recent) row\nconst lastRow = rows[rows.length - 1].json;\n\n// Return only that row in array format (n8n expects an array)\nreturn [{\n  json: lastRow\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        160
+      ],
+      "id": "3824f4a2-0643-46ea-9dd5-a3dc6f096552",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "person": "bYQBoa8reG",
+        "text": "={{ $json.linkedin_text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        816,
+        48
+      ],
+      "id": "fea30b0b-642e-4eae-b2ef-863b12a1b6de",
+      "name": "Create a post",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "uU62wMRY7ob8UfOb",
+          "name": "LinkedIn account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Medium RSS Trigger": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create a post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bec9d077-abd4-4fb0-8b1e-d862b8cdf71e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5720b2d97a7ad31e8c8db94c9652c2030e562e8f140eab81552b43e7c236db19"
+  },
+  "id": "3G3qVzCh6frOil07",
+  "tags": []
+}

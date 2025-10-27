@@ -1,0 +1,357 @@
+{
+  "name": "workflow A-AI generates draft and emails you",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 20
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "87a9e083-c5b3-4e49-a833-45b6fcfe3989",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Create the JSON described in the system instruction. Pick only one relevant and focused topic that fits current common-sense tech trends (for example: programming, DevOps, AI, automation, testing, women in tech, imposter syndrome, or working in tech). \n\nEnsure the post feels genuine and from someone in the early phase of their tech journey — curious, reflective, and learning — not like an expert’s lecture. Keep the markdown format suitable for a Medium post.",
+        "options": {
+          "systemMessage": "You are IpshaBot — an AI writing assistant for Ipsha Ghimire, a computer engineer and software tester who writes about programming, DevOps, automation, and women in tech. She is in the early stage of her tech career, exploring, learning, and sharing her experiences with curiosity and honesty.\nYour job: choose one specific and timely tech topic (not a mix) that aligns with Ipsha’s interests — such as programming, DevOps, automation, AI, testing, women in tech, imposter syndrome, or working in tech — and produce a complete Medium-style draft along with social share materials. \nWrite with a thoughtful, grounded, and relatable tone that reflects a young professional learning, experimenting, and finding her voice in tech.\nReturn ONLY valid JSON (no extra commentary) with these exact keys:\n{\n  \"title\": \"string\",\n  \"medium_post\": \"string (markdown, 800-1000 words with intro, subheadings, conclusion)\",\n  \"linkedin_caption\": \"string (1-3 short paragraphs, under 200 words)\",\n  \"hashtags\": [\"array\",\"of\",\"hashtags\"]\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        160
+      ],
+      "id": "0a293e19-dbd2-4406-9f5e-07c11be17608",
+      "name": "AI Agent",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        112,
+        352
+      ],
+      "id": "a8efbc94-ecdc-43be-9fe4-96abdef1d911",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wrf2rX72gA7gETee",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a30acf4d-dfee-4de8-9da8-3e37f08ede46",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "c8af4640-e2aa-4303-b186-bb989b93775b",
+              "name": "medium_post",
+              "value": "={{ $json.medium_post }}",
+              "type": "string"
+            },
+            {
+              "id": "7ed10969-a490-4947-9213-fd7cd3a8fe15",
+              "name": "linkedin_caption",
+              "value": "={{ $json.linkedin_caption }}",
+              "type": "string"
+            },
+            {
+              "id": "ee54255d-0fcf-47f0-b78d-5eb39e0d97b7",
+              "name": "hashtags",
+              "value": "={{ $json.hashtags }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        160
+      ],
+      "id": "a29f50f9-153f-49f5-ad75-24d28b33efbe",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "sendTo": "ipshaaghimire@gmail.com",
+        "subject": "=AI Draft post: {{$json[\"title\"]}}",
+        "emailType": "text",
+        "message": "=Hi Ipsha,\n\nYour AI agent created a new Medium draft.\n\nTitle:\n{{$json[\"title\"]}}\n\nDraft (Markdown):\n{{$json[\"medium_post\"]}}\n\n\nLinkedIn caption:\n{{$json[\"linkedin_caption\"]}}\n\nHashtags:\n{{$json[\"hashtags\"]}}\n\nSteps to publish:\n1) Review the draft above or edit on Medium.\n2) Publish the story on Medium.\n3) Once published, n8n will automatically detect the publish and share the article to LinkedIn with the caption, hashtags and image.\n\n-- n8n Agent\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1792,
+        160
+      ],
+      "id": "451b5a18-1fbc-4731-9bd3-1208a005ab69",
+      "name": "Send a message",
+      "webhookId": "cfc49ee0-b75c-4f6a-94c1-590688398257",
+      "executeOnce": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "igRmn2utCuTWefyU",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1424,
+        160
+      ],
+      "id": "88af0aab-f1f6-40ce-8e64-800f0c5a0811",
+      "name": "Wait",
+      "webhookId": "abc70c92-b5bb-4375-adf6-67e81f01ac0e",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Step 1: Get the raw output ---\nlet raw = Array.isArray($json) && $json.length > 0 ? $json[0].output : $json.output;\n\n// --- Step 2: Remove markdown fences if they exist ---\nraw = raw.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n\n// --- Step 3: Parse JSON directly ---\nlet aiData = {};\ntry {\n  aiData = JSON.parse(raw);\n} catch (error) {\n  console.log(\"⚠️ JSON parsing failed:\", error.message);\n  console.log(\"🧹 Raw JSON string:\", raw);\n}\n\n// --- Step 4: Normalize output ---\nconst output = {\n  title: aiData?.title || \"\",\n  medium_post: aiData?.medium_post || \"\",\n  linkedin_caption: aiData?.linkedin_caption || \"\",\n  hashtags: Array.isArray(aiData?.hashtags) ? aiData.hashtags : [],\n};\n\n// --- Step 5: Return structured data ---\nreturn [{ json: output }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        160
+      ],
+      "id": "893a53b4-47ac-4f26-90d4-83bfc55b00c4",
+      "name": "code",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1KA1krKKYyEAj_Rs0KjFV47LXSeRDcMlJTrnWdJ9hZlw",
+          "mode": "list",
+          "cachedResultName": "save linkedin captions-n8n automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KA1krKKYyEAj_Rs0KjFV47LXSeRDcMlJTrnWdJ9hZlw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "automation sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KA1krKKYyEAj_Rs0KjFV47LXSeRDcMlJTrnWdJ9hZlw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "title": "={{ $('Wait').item.json.title }}",
+            "linkedin_caption": "={{ $('Wait').item.json.linkedin_caption }}",
+            "hashtags": "={{ $('Wait').item.json.hashtags }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin_caption",
+              "displayName": "linkedin_caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hashtags",
+              "displayName": "hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "labelIds",
+              "displayName": "labelIds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2064,
+        160
+      ],
+      "id": "e70b3891-398d-42b8-ab81-b9d4f6fa752e",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5kKROCRn4fuHhVOZ",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "code": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kathmandu",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "d71fc80b-bb8e-4650-864a-2ac9d80c586f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5720b2d97a7ad31e8c8db94c9652c2030e562e8f140eab81552b43e7c236db19"
+  },
+  "id": "CnZiiw2HFpqHzDPq",
+  "tags": []
+}
