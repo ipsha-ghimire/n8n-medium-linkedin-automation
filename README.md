@@ -11,3 +11,8 @@ linkedin post:
 <img width="692" height="736" alt="image" src="https://github.com/user-attachments/assets/afd42fef-ec55-4c47-9454-227f8aa53d11" />
 
 link: https://www.linkedin.com/feed/update/urn:li:activity:7388632556553932800/
+
+workflow samples:
+
+<img width="1648" height="823" alt="image" src="https://github.com/user-attachments/assets/7370fc4f-21e1-49ca-aa88-081f873567b7" />
+<img width="1648" height="823" alt="image" src="https://github.com/user-attachments/assets/f298e427-0511-4c84-af4d-a35af9d0498a" />
