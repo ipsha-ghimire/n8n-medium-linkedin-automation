@@ -101,7 +101,7 @@
     },
     {
       "parameters": {
-        "sendTo": "ipshaaghimire@gmail.com",
+        "sendTo": "test@gmail.com",
         "subject": "=AI Draft post: {{$json[\"title\"]}}",
         "emailType": "text",
         "message": "=Hi Ipsha,\n\nYour AI agent created a new Medium draft.\n\nTitle:\n{{$json[\"title\"]}}\n\nDraft (Markdown):\n{{$json[\"medium_post\"]}}\n\n\nLinkedIn caption:\n{{$json[\"linkedin_caption\"]}}\n\nHashtags:\n{{$json[\"hashtags\"]}}\n\nSteps to publish:\n1) Review the draft above or edit on Medium.\n2) Publish the story on Medium.\n3) Once published, n8n will automatically detect the publish and share the article to LinkedIn with the caption, hashtags and image.\n\n-- n8n Agent\n",
